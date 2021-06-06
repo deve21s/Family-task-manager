@@ -115,7 +115,7 @@ app.get("/family/:familyid", async (req, res) => {
 
 app.post("/setpassword", (req, res) => {
   const member = {
-    email: "panchaldevendra987@gmail.com",
+    email: "",
     password: "devendra",
     role: "admin",
     familyId: "60b9f4d27ad8fc14d08769f8",
@@ -127,14 +127,14 @@ app.post("/setpassword", (req, res) => {
 // var transporter = nodemailer.createTransport({
 //   service: "gmail",
 //   auth: {
-//     user: "panchaldevendra987@gmail.com",
+//     user: "",
 //     pass: "",
 //   },
 // });
 
 // var mailOptions = {
-//   from: "panchaldevendra987@gmail.com",
-//   to: "panchaldevendra522@gmail.com",
+//   from: "",
+//   to: "",
 //   subject: "Sending Email using Node.js",
 //   text: "That was easy!",
 // };
