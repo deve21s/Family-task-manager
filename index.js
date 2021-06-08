@@ -122,6 +122,16 @@ app.post("/setpassword", (req, res) => {
   };
 });
 
+//task completed by only assigned parson
+
+app.post("/task/:taskid/:familyid", (req, res) => {
+  const { taskid, familyid } = req.body;
+  const task = Tasks.findOneAndUpdate(
+    { _id: taskid },
+    { $set: { isCompleted: true } }
+  );
+});
+
 // var nodemailer = require("nodemailer");
 
 // var transporter = nodemailer.createTransport({
