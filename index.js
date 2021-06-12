@@ -1,6 +1,7 @@
 const express = require("express");
 const mongooese = require("mongoose");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
@@ -11,7 +12,7 @@ const Tasks = require("./models/Tasks");
 //midelwere
 const midelwere = require("./controllers/midelwere/midelwere");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 mongooese
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -29,6 +30,7 @@ mongooese
   });
 
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 app.use(express.json());
 app.post("/login", midelwere, (req, res) => {
   const { user } = req;
@@ -50,7 +52,9 @@ app.post("/ragister", async (req, res) => {
       familyId: famdet.id,
     });
     const data = await user.save();
-    const accesstoken = jwt.sign({ user: data }, process.env.TOKEN_SECRET);
+    const accesstoken = jwt.sign({ user: data }, process.env.TOKEN_SECRET, {
+      expiresIn: "1day",
+    });
     return res.json(accesstoken);
   }
   res.send("try");
@@ -77,7 +81,7 @@ app.post("/addmember/:familyid", async (req, res) => {
   }
   res.send("okk");
 });
-//add task family id
+//add task
 app.post("/addtask/:familyid", async (req, res) => {
   const { familyid } = req.params;
   const family = await Family.findById(familyid);
@@ -101,8 +105,8 @@ app.get("/memberlist/:familyid", async (req, res) => {
   res.json(meberlist);
 });
 
-// family task
-app.get("/family/:familyid", async (req, res) => {
+// Tasks info
+app.get("/task/:familyid", async (req, res) => {
   const { familyid } = req.params;
   Family.findById(familyid)
     .populate("Tasks")
@@ -123,13 +127,14 @@ app.post("/setpassword", (req, res) => {
 });
 
 //task completed by only assigned parson
-
-app.post("/task/:taskid/:familyid", (req, res) => {
-  const { taskid, familyid } = req.body;
-  const task = Tasks.findOneAndUpdate(
+app.post("/task/:taskid/:familyid", async (req, res) => {
+  const { taskid } = req.params;
+  const task = await Tasks.findOneAndUpdate(
     { _id: taskid },
-    { $set: { isCompleted: true } }
+    { $set: { isCompleted: true } },
+    { useFindAndModify: true }
   );
+  res.json("ok");
 });
 
 // var nodemailer = require("nodemailer");
