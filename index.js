@@ -13,6 +13,8 @@ const Tasks = require("./models/Tasks");
 const midelwere = require("./controllers/midelwere/midelwere");
 
 const PORT = process.env.PORT || 5000;
+const email = process.env.email;
+const password = process.env.password;
 mongooese
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -81,6 +83,12 @@ app.post("/addmember/:familyid", async (req, res) => {
   }
   res.send("okk");
 });
+//get family details
+app.get("/memberlist/:familyid", async (req, res) => {
+  const { familyid } = req.params;
+  const meberlist = await Member.find({ familyId: familyid }, { password: 0 });
+  res.json(meberlist);
+});
 //add task
 app.post("/addtask/:familyid", async (req, res) => {
   const { familyid } = req.params;
@@ -98,15 +106,9 @@ app.post("/addtask/:familyid", async (req, res) => {
   await family.save();
   res.send("ok");
 });
-//get family details
-app.get("/memberlist/:familyid", async (req, res) => {
-  const { familyid } = req.params;
-  const meberlist = await Member.find({ familyId: familyid }, { password: 0 });
-  res.json(meberlist);
-});
 
 // Tasks info
-app.get("/task/:familyid", async (req, res) => {
+app.get("/tasks/:familyid", async (req, res) => {
   const { familyid } = req.params;
   Family.findById(familyid)
     .populate("Tasks")
@@ -137,29 +139,34 @@ app.post("/task/:taskid/:familyid", async (req, res) => {
   res.json("ok");
 });
 
-// var nodemailer = require("nodemailer");
+app.get("/task/:taskid", async (req, res) => {
+  const { taskid } = req.params;
+  const task = await Tasks.findById({ _id: taskid });
+  res.json(task);
+});
+var nodemailer = require("nodemailer");
 
-// var transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: "",
-//     pass: "",
-//   },
-// });
+var transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: email,
+    pass: password,
+  },
+});
 
-// var mailOptions = {
-//   from: "",
-//   to: "",
-//   subject: "Sending Email using Node.js",
-//   text: "That was easy!",
-// };
+var mailOptions = {
+  from: email,
+  to: email,
+  subject: "Sending Email using Node.js",
+  text: "That was easy!",
+};
 
-// transporter.sendMail(mailOptions, function (error, info) {
-//   if (error) {
-//     console.log(error);
-//   } else {
-//     console.log("Email sent: " + info.response);
-//   }
-// });
+transporter.sendMail(mailOptions, function (error, info) {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("Email sent: " + info.response);
+  }
+});
 
 //
