@@ -34,12 +34,30 @@ mongooese
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.json());
-app.post("/login", midelwere, (req, res) => {
-  const { user } = req;
-  console.log(user);
-  res.send("hello");
-});
 
+//login and get token
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  const data = await Member.find({ email: email, password: password });
+  let { _id, role, familyId } = data[0];
+  let member = {
+    id: _id,
+    email: email,
+    role: role,
+    familyid: familyId,
+  };
+  try {
+    if (data.length !== 0) {
+      const accesstoken = jwt.sign(member, process.env.TOKEN_SECRET);
+      return res.json(accesstoken);
+    } else {
+      throw Error("email or password are ");
+    }
+  } catch (error) {
+    res.json(error.message);
+  }
+});
+//ragister data to member collection
 app.post("/ragister", async (req, res) => {
   console.log(req.body);
   const { email, password } = req.body;
@@ -63,8 +81,6 @@ app.post("/ragister", async (req, res) => {
 });
 
 //add member. for this we need family id
-//check email middleware function
-//auth function
 app.post("/addmember/:familyid", async (req, res) => {
   const { name, email } = req.body;
   const { familyid } = req.params;
@@ -72,7 +88,7 @@ app.post("/addmember/:familyid", async (req, res) => {
   console.log(isunique);
   if (isunique.length === 0) {
     const mem = {
-      name: name,
+      name: name || "deven",
       email: email,
       role: "member",
       familyId: familyid,
@@ -92,33 +108,35 @@ app.get("/memberlist/:familyid", async (req, res) => {
 //add task
 app.post("/addtask/:familyid", async (req, res) => {
   const { familyid } = req.params;
+  const { title, description, date, assign } = req.body;
   const family = await Family.findById(familyid);
   const taskdetails = {
-    title: "task1",
-    des: "task1 details",
-    dueDate: "2day",
+    title: title,
+    des: description,
+    dueDate: date,
     isCompleted: false,
-    assign: "deven",
+    assign: assign,
   };
   const task = new Tasks(taskdetails);
   const taskid = await task.save();
   family.Tasks.push(taskid);
   await family.save();
-  res.send("ok");
+  res.json(taskid);
 });
 
-// Tasks info
+// all tasks
 app.get("/tasks/:familyid", async (req, res) => {
   const { familyid } = req.params;
   Family.findById(familyid)
     .populate("Tasks")
-    .then((data) => {
+    .then((info) => {
+      const data = info.Tasks;
       res.json(data);
     });
 });
 
 //set password
-
+//token required
 app.post("/setpassword", (req, res) => {
   const member = {
     email: "",
@@ -139,6 +157,18 @@ app.post("/task/:taskid/:familyid", async (req, res) => {
   res.json("ok");
 });
 
+//edit task my parson
+app.post("/edittask/:taskid/:familyid", async (req, res) => {
+  const { taskid } = req.params;
+  const taskss = req.body.task;
+  const task = await Tasks.findOneAndUpdate(
+    { _id: taskid },
+    { $set: taskss },
+    { useFindAndModify: true }
+  );
+  res.json("ok");
+});
+//single task
 app.get("/task/:taskid", async (req, res) => {
   const { taskid } = req.params;
   const task = await Tasks.findById({ _id: taskid });
