@@ -51,7 +51,7 @@ app.post("/login", async (req, res) => {
       const accesstoken = jwt.sign(member, process.env.TOKEN_SECRET);
       return res.json(accesstoken);
     } else {
-      throw Error("email or password are ");
+      throw Error("email or password are Incorrect.");
     }
   } catch (error) {
     res.json(error.message);
@@ -60,12 +60,13 @@ app.post("/login", async (req, res) => {
 //ragister data to member collection
 app.post("/ragister", async (req, res) => {
   console.log(req.body);
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
   const isunique = await Member.find({ email: email });
   if (isunique.length === 0) {
     const family = new Family({});
     const famdet = await family.save();
     const user = new Member({
+      name: username,
       email: email,
       password: password,
       role: "admin",
@@ -86,18 +87,28 @@ app.post("/addmember/:familyid", async (req, res) => {
   const { familyid } = req.params;
   const isunique = await Member.find({ email: email });
   console.log(isunique);
-  if (isunique.length === 0) {
-    const mem = {
-      name: name || "deven",
-      email: email,
-      role: "member",
-      familyId: familyid,
-    };
-    const member = new Member(mem);
-    await member.save();
-    return res.json("ok");
-  }
-  res.send("okk");
+  // if (isunique.length === 0) {
+  let member = {
+    name: name,
+    email: email,
+    role: "member",
+    familyId: familyid,
+  };
+  const token = jwt.sign(member, process.env.TOKEN_SECRET);
+  const result = mailto(email, token);
+
+  return res.json(result);
+
+  // const mem = {
+  //   name: name || "deven",
+  //   email: email,
+  //   role: "member",
+  //   familyId: familyid,
+  // };
+  // const member = new Member(mem);
+  // await member.save();
+  // return res.json("ok");
+  // }
 });
 //get family details
 app.get("/memberlist/:familyid", async (req, res) => {
@@ -138,12 +149,11 @@ app.get("/tasks/:familyid", async (req, res) => {
 //set password
 //token required
 app.post("/setpassword", (req, res) => {
-  const member = {
-    email: "",
-    password: "devendra",
-    role: "admin",
-    familyId: "60b9f4d27ad8fc14d08769f8",
-  };
+  const { password, token } = req.body;
+  const user = jwt.decode(token);
+  const data = { ...user, password };
+  console.log(data);
+  res.json(data);
 });
 
 //task completed by only assigned parson
@@ -168,6 +178,7 @@ app.post("/edittask/:taskid/:familyid", async (req, res) => {
   );
   res.json("ok");
 });
+
 //single task
 app.get("/task/:taskid", async (req, res) => {
   const { taskid } = req.params;
@@ -176,27 +187,26 @@ app.get("/task/:taskid", async (req, res) => {
 });
 var nodemailer = require("nodemailer");
 
-var transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: email,
-    pass: password,
-  },
-});
+const mailto = (email, token) => {
+  var transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.PASSWORD,
+    },
+  });
+  var mailOptions = {
+    from: process.env.EMAIL,
+    to: email,
+    subject: "invitation for the FTM account login",
+    html: `click to the link to set password : <a href="http://localhost:3000/setpassword/${token}">setpassword</a>`,
+  };
 
-var mailOptions = {
-  from: email,
-  to: email,
-  subject: "Sending Email using Node.js",
-  text: "That was easy!",
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      return "mail faild";
+    } else {
+      return "mail send success";
+    }
+  });
 };
-
-transporter.sendMail(mailOptions, function (error, info) {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log("Email sent: " + info.response);
-  }
-});
-
-//
