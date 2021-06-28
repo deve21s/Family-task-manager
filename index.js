@@ -98,17 +98,6 @@ app.post("/addmember", midelwere, async (req, res) => {
   const result = mailto(email, token);
 
   return res.json(result);
-
-  // const mem = {
-  //   name: name || "deven",
-  //   email: email,
-  //   role: "member",
-  //   familyId: familyid,
-  // };
-  // const member = new Member(mem);
-  // await member.save();
-  // return res.json("ok");
-  // }
 });
 //get family details
 app.get("/memberlist", midelwere, async (req, res) => {
@@ -169,7 +158,7 @@ app.post("/setpassword", (req, res) => {
 });
 
 //task completed by only assigned parson
-app.post("/task/:taskid", async (req, res) => {
+app.post("/task/:taskid", midelwere, async (req, res) => {
   const { taskid } = req.params;
   const task = await Tasks.findOneAndUpdate(
     { _id: taskid },
