@@ -82,9 +82,9 @@ app.post("/ragister", async (req, res) => {
 });
 
 //add member. for this we need family id
-app.post("/addmember/:familyid", async (req, res) => {
+app.post("/addmember", midelwere, async (req, res) => {
   const { name, email } = req.body;
-  const { familyid } = req.params;
+  const { familyId } = req.user;
   const isunique = await Member.find({ email: email });
   console.log(isunique);
   // if (isunique.length === 0) {
@@ -92,7 +92,7 @@ app.post("/addmember/:familyid", async (req, res) => {
     name: name,
     email: email,
     role: "member",
-    familyId: familyid,
+    familyId: familyId,
   };
   const token = jwt.sign(member, process.env.TOKEN_SECRET);
   const result = mailto(email, token);
@@ -111,14 +111,15 @@ app.post("/addmember/:familyid", async (req, res) => {
   // }
 });
 //get family details
-app.get("/memberlist/:familyid", async (req, res) => {
-  const { familyid } = req.params;
+app.get("/memberlist", midelwere, async (req, res) => {
+  console.log(req.user);
+  const { familyid } = req.user;
   const meberlist = await Member.find({ familyId: familyid }, { password: 0 });
   res.json(meberlist);
 });
 //add task
-app.post("/addtask/:familyid", async (req, res) => {
-  const { familyid } = req.params;
+app.post("/addtask", midelwere, async (req, res) => {
+  const { familyid } = req.user;
   const { title, description, date, assign } = req.body;
   const family = await Family.findById(familyid);
   const taskdetails = {
@@ -136,8 +137,9 @@ app.post("/addtask/:familyid", async (req, res) => {
 });
 
 // all tasks
-app.get("/tasks/:familyid", async (req, res) => {
-  const { familyid } = req.params;
+app.get("/tasks", midelwere, async (req, res) => {
+  //add family id by token
+  const { familyid } = req.user;
   Family.findById(familyid)
     .populate("Tasks")
     .then((info) => {
@@ -150,14 +152,24 @@ app.get("/tasks/:familyid", async (req, res) => {
 //token required
 app.post("/setpassword", (req, res) => {
   const { password, token } = req.body;
-  const user = jwt.decode(token);
+  const user = jwt.varify(
+    token,
+    process.env.TOKEN_SECRET,
+    async (err, user) => {
+      if (err) {
+        return res.json("pls try again or check link");
+      }
+      const member = new Member({ ...user, password });
+      await member.save();
+    }
+  );
   const data = { ...user, password };
   console.log(data);
   res.json(data);
 });
 
 //task completed by only assigned parson
-app.post("/task/:taskid/:familyid", async (req, res) => {
+app.post("/task/:taskid", async (req, res) => {
   const { taskid } = req.params;
   const task = await Tasks.findOneAndUpdate(
     { _id: taskid },
@@ -168,7 +180,7 @@ app.post("/task/:taskid/:familyid", async (req, res) => {
 });
 
 //edit task my parson
-app.post("/edittask/:taskid/:familyid", async (req, res) => {
+app.post("/edittask/:taskid", async (req, res) => {
   const { taskid } = req.params;
   const taskss = req.body.task;
   const task = await Tasks.findOneAndUpdate(
