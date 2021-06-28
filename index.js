@@ -81,7 +81,7 @@ app.post("/ragister", async (req, res) => {
   res.send("try");
 });
 
-//add member. for this we need family id
+//add member
 app.post("/addmember", midelwere, async (req, res) => {
   const { name, email } = req.body;
   const { familyId } = req.user;
