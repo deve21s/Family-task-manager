@@ -8,6 +8,12 @@ const taskSchema = Schema(
     dueDate: String,
     isCompleted: Boolean,
     assign: String,
+    history: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "history",
+      },
+    ],
   },
   {
     timestamp: true,

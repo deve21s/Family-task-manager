@@ -63,7 +63,7 @@ app.post("/ragister", async (req, res) => {
   const { email, password, username } = req.body;
   const isunique = await Member.find({ email: email });
   if (isunique.length === 0) {
-    const family = new Family({});
+    const family = new Family({ Tasks: [] });
     const famdet = await family.save();
     const user = new Member({
       name: username,
@@ -211,3 +211,15 @@ const mailto = (email, token) => {
     }
   });
 };
+
+//delete task id from family Tasks and also from task list
+app.delete("/task/:taskid", midelwere, async (req, res) => {
+  const { taskid } = req.params;
+  const familyid = req.user.familyId;
+  const family = await Family.findById(familyid);
+  const task = await Tasks.findById(taskid);
+  family.Tasks = family.Tasks.filter((t) => t.toString() !== taskid);
+  task.remove();
+  await family.save();
+  res.json("ok");
+});

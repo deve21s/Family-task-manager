@@ -8,12 +8,6 @@ const familyschema = Schema({
       ref: "task",
     },
   ],
-  history: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "history",
-    },
-  ],
 });
 
 module.exports = mongooese.model("family", familyschema);
