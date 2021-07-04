@@ -54,12 +54,11 @@ app.post("/login", async (req, res) => {
       throw Error("email or password are Incorrect.");
     }
   } catch (error) {
-    res.json(error.message);
+    res.status(201).json(error.message);
   }
 });
 //ragister data to member collection
 app.post("/ragister", async (req, res) => {
-  console.log(req.body);
   const { email, password, username } = req.body;
   const isunique = await Member.find({ email: email });
   if (isunique.length === 0) {
@@ -78,7 +77,7 @@ app.post("/ragister", async (req, res) => {
     });
     return res.json(accesstoken);
   }
-  res.send("try");
+  res.status(201).json("try");
 });
 
 //add member
@@ -86,7 +85,6 @@ app.post("/addmember", midelwere, async (req, res) => {
   const { name, email } = req.body;
   const { familyId } = req.user;
   const isunique = await Member.find({ email: email });
-  console.log(isunique);
   // if (isunique.length === 0) {
   let member = {
     name: name,
@@ -96,12 +94,10 @@ app.post("/addmember", midelwere, async (req, res) => {
   };
   const token = jwt.sign(member, process.env.TOKEN_SECRET);
   const result = mailto(email, token);
-
   return res.json(result);
 });
 //get family details
 app.get("/memberlist", midelwere, async (req, res) => {
-  console.log(req.user);
   const { familyid } = req.user;
   const meberlist = await Member.find({ familyId: familyid }, { password: 0 });
   res.json(meberlist);
@@ -153,7 +149,6 @@ app.post("/setpassword", (req, res) => {
     }
   );
   const data = { ...user, password };
-  console.log(data);
   res.json(data);
 });
 
@@ -205,7 +200,7 @@ const mailto = (email, token) => {
 
   transporter.sendMail(mailOptions, function (error, info) {
     if (error) {
-      return "mail faild";
+      return "try again";
     } else {
       return "mail send success";
     }
