@@ -14,9 +14,15 @@ const taskSchema = Schema(
         ref: "history",
       },
     ],
+    comments: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Comment",
+      },
+    ],
   },
   {
-    timestamp: true,
+    timestamps: true,
   }
 );
 

@@ -9,6 +9,8 @@ const app = express();
 const Family = require("./models/famaliy");
 const Member = require("./models/member");
 const Tasks = require("./models/Tasks");
+const Comment = require("./models/comment");
+const Reply = require("./models/reply");
 //midelwere
 const midelwere = require("./controllers/midelwere/midelwere");
 
@@ -69,36 +71,44 @@ app.post("/ragister", async (req, res) => {
       email: email,
       password: password,
       role: "admin",
-      familyId: famdet.id,
+      familyId: famdet._id,
     });
     const data = await user.save();
-    const accesstoken = jwt.sign({ user: data }, process.env.TOKEN_SECRET, {
+    let member = {
+      id: data._id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      familyid: data.familyId,
+    };
+
+    const accesstoken = jwt.sign(member, process.env.TOKEN_SECRET, {
       expiresIn: "1day",
     });
     return res.json(accesstoken);
   }
-  res.status(201).json("try");
+  res.status(201).json("email already ragistered");
 });
 
 //add member
 app.post("/addmember", midelwere, async (req, res) => {
   const { name, email } = req.body;
-  const { familyId } = req.user;
+  const { familyid } = req.user;
   const isunique = await Member.find({ email: email });
   // if (isunique.length === 0) {
   let member = {
     name: name,
     email: email,
     role: "member",
-    familyId: familyId,
+    familyId: familyid,
   };
   const token = jwt.sign(member, process.env.TOKEN_SECRET);
   const result = mailto(email, token);
-  return res.json(result);
+  return res.json("main send success");
 });
 //get family details
 app.get("/memberlist", midelwere, async (req, res) => {
-  const { familyid } = req.user;
+  const { familyId } = req.user;
   const meberlist = await Member.find({ familyId: familyid }, { password: 0 });
   res.json(meberlist);
 });
@@ -137,19 +147,17 @@ app.get("/tasks", midelwere, async (req, res) => {
 //token required
 app.post("/setpassword", (req, res) => {
   const { password, token } = req.body;
-  const user = jwt.varify(
-    token,
-    process.env.TOKEN_SECRET,
-    async (err, user) => {
-      if (err) {
-        return res.json("pls try again or check link");
-      }
-      const member = new Member({ ...user, password });
-      await member.save();
+  jwt.verify(token, process.env.TOKEN_SECRET, async function (err, decoded) {
+    // err
+    if (err) {
+      console.log(err);
     }
-  );
-  const data = { ...user, password };
-  res.json(data);
+    //else decode and add member to the member collection
+    console.log(decoded);
+    const member = new Member({ ...decoded, password });
+    await member.save();
+    res.json("ok");
+  });
 });
 
 //task completed by only assigned parson
@@ -164,23 +172,40 @@ app.post("/task/:taskid", midelwere, async (req, res) => {
 });
 
 //edit task my parson
-app.post("/edittask/:taskid", async (req, res) => {
+app.post("/edittask/:taskid", midelwere, async (req, res) => {
   const { taskid } = req.params;
-  const taskss = req.body.task;
-  const task = await Tasks.findOneAndUpdate(
+  const { title, des, dueDate, assign } = req.body;
+  const task = {
+    title: title,
+    des: des,
+    dueDate: dueDate,
+    assign: assign,
+  };
+  console.log(task);
+  const taskdetails = await Tasks.findOneAndUpdate(
     { _id: taskid },
-    { $set: taskss },
+    { $set: task },
     { useFindAndModify: true }
   );
   res.json("ok");
 });
 
 //single task
-app.get("/task/:taskid", async (req, res) => {
+app.get("/task/:taskid", midelwere, async (req, res) => {
   const { taskid } = req.params;
-  const task = await Tasks.findById({ _id: taskid });
-  res.json(task);
+  Tasks.findOne({ _id: taskid })
+    .populate({
+      path: "comments",
+      populate: {
+        path: "replys",
+      },
+    })
+    .then((task) => {
+      console.log(task);
+      res.json(task);
+    });
 });
+
 var nodemailer = require("nodemailer");
 
 const mailto = (email, token) => {
@@ -208,13 +233,44 @@ const mailto = (email, token) => {
 };
 
 //delete task id from family Tasks and also from task list
-app.delete("/task/:taskid", midelwere, async (req, res) => {
+app.get("/task/:taskid/delete", midelwere, async (req, res) => {
   const { taskid } = req.params;
-  const familyid = req.user.familyId;
-  const family = await Family.findById(familyid);
+  const familyId = req.user.familyid;
+  const family = await Family.findById(familyId);
   const task = await Tasks.findById(taskid);
   family.Tasks = family.Tasks.filter((t) => t.toString() !== taskid);
   task.remove();
   await family.save();
   res.json("ok");
+});
+
+//add comment to the task
+app.post("/comment/:taskid", midelwere, async (req, res) => {
+  const { taskid } = req.params;
+  const { text } = req.body;
+  const comm = {
+    text: text,
+    name: req.user.name || "deven",
+  };
+  const tasks = await Tasks.findById({ _id: taskid });
+  console.log(tasks);
+  const comment = new Comment(comm);
+  tasks.comments.push(comment);
+  const newcomment = await comment.save();
+  await tasks.save();
+  res.json(newcomment);
+});
+
+app.post("/comment/:commentid/reply", midelwere, async (req, res) => {
+  const id = req.params.cid;
+  const comment = await Comment.findById(id);
+  let { text } = req.body;
+  let replaybody = {
+    name: req.user.name,
+    text: text,
+  };
+  const reply = new Reply(replaybody);
+  comment.replys.push(reply);
+  await reply.save();
+  await comment.save();
 });
