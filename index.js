@@ -221,7 +221,7 @@ const mailto = (email, token) => {
     from: process.env.EMAIL,
     to: email,
     subject: "invitation for the FTM account login",
-    html: `click to the link to set password : <a href="http://localhost:3000/setpassword/${token}">setpassword</a>`,
+    html: `click to the link to set password : <a href="https://ftm-psi.vercel.app/setpassword/${token}">setpassword</a>`,
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
