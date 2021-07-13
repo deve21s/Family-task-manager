@@ -41,8 +41,9 @@ app.use(express.json());
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const data = await Member.find({ email: email, password: password });
-  let { _id, role, familyId } = data[0];
+  let { _id, role, familyId, name } = data[0];
   let member = {
+    name,
     id: _id,
     email: email,
     role: role,
@@ -108,7 +109,7 @@ app.post("/addmember", midelwere, async (req, res) => {
 });
 //get family details
 app.get("/memberlist", midelwere, async (req, res) => {
-  const { familyId } = req.user;
+  const { familyid } = req.user;
   const meberlist = await Member.find({ familyId: familyid }, { password: 0 });
   res.json(meberlist);
 });
