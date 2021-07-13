@@ -98,14 +98,14 @@ app.post("/addmember", midelwere, async (req, res) => {
   const isunique = await Member.find({ email: email });
   // if (isunique.length === 0) {
   let member = {
-    name: name,
+    name: name || "deven",
     email: email,
     role: "member",
     familyId: familyid,
   };
   const token = jwt.sign(member, process.env.TOKEN_SECRET);
   const result = mailto(email, token);
-  return res.json("main send success");
+  return res.json("mail send success");
 });
 //get family details
 app.get("/memberlist", midelwere, async (req, res) => {
