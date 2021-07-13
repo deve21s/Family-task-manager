@@ -104,7 +104,7 @@ app.post("/addmember", midelwere, async (req, res) => {
     familyId: familyid,
   };
   const token = jwt.sign(member, process.env.TOKEN_SECRET);
-  const result = mailto(email, token);
+  const result = await mailto(email, token);
   return res.json("mail send success");
 });
 //get family details
