@@ -96,16 +96,18 @@ app.post("/addmember", midelwere, async (req, res) => {
   const { name, email } = req.body;
   const { familyid } = req.user;
   const isunique = await Member.find({ email: email });
-  // if (isunique.length === 0) {
-  let member = {
-    name: name || "deven",
-    email: email,
-    role: "member",
-    familyId: familyid,
-  };
-  const token = jwt.sign(member, process.env.TOKEN_SECRET);
-  const result = await mailto(email, token);
-  return res.json("mail send success");
+  if (isunique.length === 0) {
+    let member = {
+      name: name || "deven",
+      email: email,
+      role: "member",
+      familyId: familyid,
+    };
+    const token = jwt.sign(member, process.env.TOKEN_SECRET);
+    const result = await mailto(email, token);
+    return res.json("mail send success");
+  }
+  res.json("email already ragistered");
 });
 //get family details
 app.get("/memberlist", midelwere, async (req, res) => {
