@@ -140,6 +140,7 @@ app.get("/tasks", midelwere, async (req, res) => {
   const { familyid } = req.user;
   Family.findById(familyid)
     .populate("Tasks")
+    .sort({ dueDate: -1 })
     .then((info) => {
       const data = info.Tasks;
       res.json(data);
